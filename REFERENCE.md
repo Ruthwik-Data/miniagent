@@ -1,13 +1,23 @@
-<!-- Line counts marked (target) are estimates until the code exists.
-     Task 9 measures them with `wc -l` and substitutes the real numbers. -->
-
-# REFERENCE.md — 420 lines vs 1,300,000
+# REFERENCE.md — 309 lines vs 1,300,000
 
 A map from this repo's spine to [xai-org/grok-build](https://github.com/xai-org/grok-build),
-xAI's production coding agent: ~1.3M lines of Rust, Apache 2.0, published
-January 2026 as a periodic export from their internal monorepo.
+xAI's production coding agent: ~1.3M lines of Rust, Apache 2.0, published as a
+periodic export from their internal monorepo.
 
-Two data points, per subsystem: **miniagent (~420 lines, target) → grok-build (1.3M)**.
+Two data points, per subsystem: **miniagent (309 lines of code) → grok-build (1.3M)**.
+
+Measured, not estimated:
+
+| | Lines |
+|---|---|
+| Code | **309** |
+| Annotation (the docstrings explaining grok) | 260 |
+| **Total** | **569** |
+| Tests | 37, all offline |
+
+Of those 309 code lines, roughly **110 are JSON tool schemas** — data describing
+the tools to the model, not logic. The six tool implementations are ~50 lines
+between them. The agent's actual reasoning machinery is under 200 lines.
 
 Each section answers three questions:
 
@@ -56,7 +66,7 @@ design. It's product.
 - [x] [**Tools: edit and write**](#tools-edit-and-write)
 - [x] [**Tools: bash and safety**](#tools-bash-and-safety)
 - [x] [**Sessions and the stateless model**](#sessions-and-the-stateless-model)
-- [ ] **What we left out, and why** — *Task 9*
+- [x] [**What we left out, and why**](#what-we-left-out-and-why)
 
 ---
 
@@ -374,6 +384,46 @@ whether it chose one or not.
 
 Ours is: warn, and let the user start a new session. That *is* a strategy. It's
 just the cheapest one.
+
+---
+
+## What we left out, and why
+
+**This list is the finding, not the backlog.** Naming what a coding agent doesn't
+need is the only way to say what it does.
+
+| Left out | grok-build has | Why it isn't the spine |
+|---|---|---|
+| **MCP** | `xai-grok-mcp/servers.rs`, 7,538 lines | MCP is a *distribution* concept, not an agent one. The model cannot perceive whether a tool is local or remote — it sees a JSON schema and emits a call. MCP is the plumbing that fetches schemas from someone else's process. Real engineering; zero agent insight. |
+| **Any UI** | `xai-grok-pager`, **414,627 lines** | Larger than their agent runtime. One settings modal is 12,471 lines — 40× this repo's code. Interface is where production agent code goes, and none of it teaches how agents work. |
+| **Subagents** | `grok_build/task` | Delegation is the same loop, nested. Interesting for cost and context isolation; adds nothing to understanding the mechanism. |
+| **Goal decomposition** | `goal_{planner,verifier,strategist,summarizer}_prompt.md` — planner 239 lines, verifier 202 | Four LLM roles around one task. **This is a bet on model weakness** (see [The loop](#the-loop)) — scaffolding that exists because a model loses the plot on long tasks. |
+| **Compaction** | `xai-grok-compaction`, its own crate | Not an optimization — a *consequence* of statelessness. Ours warns; theirs compacts. Both are strategies. |
+| **Anchored editing** | `grok_build_hashline/`, 3 schemes + 887-line benchmark | Behind a server-side flag, still being measured. Naive string matching is the baseline they're measuring *against*. |
+| **Sandbox / permissions** | `xai-grok-sandbox`, `workspace/src/permission/` | Ours is `RISKY = {"bash"}` and a y/N prompt. Theirs is the floor under the prompt's judgment. |
+| **Scheduling / background tasks** | `scheduler`, `monitor`, `kill_task` | Outer-loop plumbing — a timer and a queue. No LLM in it. [`snarktank/ralph`](https://github.com/snarktank/ralph) does this well already. |
+| **Cross-session memory** | `xai-grok-memory` | Sessions are in scope; a memory *system* isn't. [`thedotmack/claude-mem`](https://github.com/thedotmack/claude-mem) does it for every major agent. |
+| **Slash commands** | 30+: `/compact`, `/fork`, `/dashboard`, `/effort`, `/imagine`… | A string-prefix check and a dispatch table. No LLM involved. |
+| **Streaming, REPL** | Both | Streaming is UX. A REPL would hold the transcript in memory and *hide* the statelessness lesson — one-shot forces every turn through disk. |
+| **Crash handling** | `xai-crash-handler` | Filed as boilerplate until a bad API key here dumped ~200 lines of litellm traceback to show a one-line problem. It exists so no user ever sees that. |
+
+### The pattern
+
+Sort those rows and they fall into two piles:
+
+**Bets on model weakness** — goal decomposition, verification, anchored editing,
+compaction. These exist because the model isn't good enough yet. **They shrink as
+models improve.** If GPT-6 holds a long task without losing the plot, the
+239-line planner prompt is dead weight.
+
+**Bets on human needs** — the TUI, settings, sessions, MCP, crash handling,
+permissions. These have nothing to do with model quality. **They grow forever**,
+because humans have preferences and organizations have requirements, and no
+amount of model progress changes that.
+
+That's the useful lens on "what do 1.3M lines buy": **a shrinking pile and a
+growing one.** The shrinking pile is what people mean when they say the harness
+is thin. The growing pile is why the harness will never actually be thin.
 
 ---
 
