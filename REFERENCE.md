@@ -55,7 +55,7 @@ design. It's product.
 - [x] [**Tools: read, list, grep**](#tools-read-list-grep)
 - [x] [**Tools: edit and write**](#tools-edit-and-write)
 - [x] [**Tools: bash and safety**](#tools-bash-and-safety)
-- [ ] **Sessions and the stateless model** — *Task 6*
+- [x] [**Sessions and the stateless model**](#sessions-and-the-stateless-model)
 - [ ] **What we left out, and why** — *Task 9*
 
 ---
@@ -234,6 +234,64 @@ scales is the paragraph.
 
 **The most sophisticated safety machinery in a 1.3M-line agent is 15 lines of
 English.** Everything else is the floor beneath it.
+
+---
+
+## Sessions and the stateless model
+
+**Ours:** ~40 lines. `json.dump(messages)`.
+**grok-build:** a session store, `summary.json` metadata, rewind snapshots,
+nested subagent sessions, and `xai-grok-compaction` as its own crate.
+
+### The fact everything else follows from
+
+**The model is stateless.** It remembers nothing between calls.
+
+Every turn resends the entire transcript: system prompt, every message, every
+tool call, every result. Turn 10 resends turns 1–9. The "memory" you experience
+talking to an agent is an illusion produced by replaying the whole conversation
+each time, at full cost, on every turn.
+
+So persisting a session is writing a list of dicts to disk:
+
+```python
+path.write_text(json.dumps(messages, indent=2))
+```
+
+The part that sounds hardest — giving an agent memory — is one line, because
+**the context window is the state.** There is nowhere else for state to live.
+
+### What grok-build does
+
+Sessions save automatically, per working directory, under
+`~/.grok/sessions/<encoded-cwd>/<session-id>/` with a `summary.json` holding
+title, timestamps, model id, and message counts. You can **resume**, **rewind**
+(file snapshots per turn), or **compact**. Subagent sessions nest inside their
+parent.
+
+### What the extra lines buy
+
+Everything downstream of that one fact:
+
+- **Rewind** needs file snapshots, because replaying the transcript restores the
+  model's state but not your disk. Statelessness cuts both ways.
+- **Compaction** exists because the transcript grows and every turn resends all
+  of it. Around turn 30 you hit the context limit — not gradually, but as a wall.
+  That's a whole crate (`xai-grok-compaction`) whose entire job is deciding what
+  to forget.
+- **`summary.json`** exists because a directory of `<uuid>.json` is unusable once
+  you have forty of them.
+
+### The finding
+
+**Compaction is not an optimization — it's a consequence.** The moment you accept
+that the model is stateless and the transcript is the memory, you have also
+accepted that memory grows without bound and must eventually be thrown away on
+purpose. Every agent that runs longer than ~30 turns has a compaction strategy,
+whether it chose one or not.
+
+Ours is: warn, and let the user start a new session. That *is* a strategy. It's
+just the cheapest one.
 
 ---
 
