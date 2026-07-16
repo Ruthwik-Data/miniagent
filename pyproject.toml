@@ -1,0 +1,18 @@
+[project]
+name = "miniagent"
+version = "0.1.0"
+description = "The spine of a coding agent, annotated against xAI's grok-build"
+requires-python = ">=3.14"
+dependencies = ["litellm>=1.40", "typer>=0.12"]
+
+[project.scripts]
+miniagent = "miniagent.cli:app"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["miniagent"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
