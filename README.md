@@ -10,7 +10,7 @@ what the other 1,299,622 lines are actually for.
 [![python](https://img.shields.io/badge/python-3.14-blue)](pyproject.toml)
 [![code](https://img.shields.io/badge/spine-378%20lines-brightgreen)](#the-numbers)
 [![ci](https://github.com/Ruthwik-Data/miniagent/actions/workflows/ci.yml/badge.svg)](https://github.com/Ruthwik-Data/miniagent/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-50%20offline-brightgreen)](#running-it)
+[![tests](https://img.shields.io/badge/tests-51%20offline-brightgreen)](#running-it)
 
 ![miniagent finding and fixing a real bug](demos/demo.gif)
 
@@ -121,7 +121,7 @@ judge: it costs turns and returns nothing.
 | `verify.py` (the failed experiment) | 63 | 126 |
 | **All** | **441** | **809** |
 
-Tests: **50**, all offline, zero API spend.
+Tests: **51**, all offline, zero API spend.
 
 ~110 of the spine's 378 code lines are **JSON tool schemas** — data describing
 tools to the model, not logic. All six tool implementations together are ~50
@@ -240,13 +240,29 @@ Any litellm model: `--model claude-sonnet-5`, `--model openrouter/...`
 | `--verify` | Second LLM pass checks the work before accepting "done" ([it doesn't work](#so-we-built-the-verifier-it-didnt-work)) |
 
 ```bash
-.venv/bin/pytest    # 50 tests, zero API calls
+.venv/bin/pytest    # 51 tests, 1.5 seconds, no API key
 ```
 
-Every test runs against a `FakeLLM` with scripted tool calls. The loop's
-correctness has nothing to do with the model, so it's tested without one — the
-same move grok-build makes in its hashline benchmark, which measures an edit
-format with no LLM in it at all.
+Every test runs against a `FakeLLM` returning scripted tool calls. **The loop's
+correctness has nothing to do with the model, so it's tested without one** —
+which is why the suite is free, why it's fast, and why CI needs no secrets. Same
+move grok-build makes in its hashline benchmark, which measures an edit format
+with no LLM in it at all: isolate the deterministic substrate and test *that*.
+
+### Five of the 51 are scars
+
+Tests that exist because something actually broke:
+
+| Test | The bug it pins down |
+|---|---|
+| `grep_never_searches_the_agents_own_session_store` | `grep` found the transcript the running loop was writing and fed it back — 142,984 tokens in six turns |
+| `bash_expands_tilde_in_cwd` | The model passed `cwd="~"`; `subprocess` doesn't expand it. This is what grok's `normalization.rs` is for |
+| `verifier_cannot_edit_the_evidence` | The judge tried to `edit_file` the thing it was sent to inspect |
+| `cli_prints_one_line_for_a_bad_api_key` | Was ~200 lines of litellm traceback to explain a one-line problem |
+| `cli_exposes_the_documented_flags` | Two CI failures from a test that checked typer's help renderer — not code we own |
+
+The other 46 were written from the plan and passed first try. **You can read this
+project's history out of its test names.**
 
 ---
 

@@ -13,7 +13,7 @@ Measured, not estimated:
 | The spine (6 files) | **378** | 683 |
 | `verify.py` (failed experiment) | 63 | 126 |
 | **All** | **441** | **809** |
-| Tests | 50, all offline | |
+| Tests | 51, all offline | |
 
 Of the spine's 378 code lines, roughly **110 are JSON tool schemas** — data describing
 the tools to the model, not logic. The six tool implementations are ~50 lines
