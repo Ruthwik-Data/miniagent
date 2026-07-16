@@ -6,10 +6,14 @@ runner = CliRunner()
 
 
 def test_cli_help_lists_the_flags():
-    result = runner.invoke(app, ["--help"])
+    # COLUMNS is load-bearing: typer renders help through rich, which wraps to
+    # terminal width and truncates flag names inside its box. This passed on a
+    # wide local terminal and failed in CI's 80 columns.
+    result = runner.invoke(app, ["--help"], env={"COLUMNS": "200"})
     assert result.exit_code == 0
     assert "--auto" in result.stdout
     assert "--resume" in result.stdout
+    assert "--verify" in result.stdout
 
 
 def test_cli_runs_a_prompt_and_prints_the_result(monkeypatch):
