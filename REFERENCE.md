@@ -48,9 +48,9 @@ permissions, voice, and markdown rendering. The portion that answers *"how does
 an agent work"* is a few thousand lines at most, and its irreducible core — the
 loop — is about ten.
 
-So the ratio isn't 420 : 1,300,000 for the same thing. It's three different things:
+So the ratio isn't 309 : 1,300,000 for the same thing. It's three different things:
 
-- **~420 lines** — the mechanism. What makes it an agent.
+- **~309 lines** — the mechanism. What makes it an agent.
 - **~thousands** — making it reliable. Goal verification, compaction, anchored editing, retries.
 - **1.3M** — making it a *product*. Interface, integrations, distribution, enterprise.
 
