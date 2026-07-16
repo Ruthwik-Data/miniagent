@@ -1,21 +1,21 @@
-# REFERENCE.md — 309 lines vs 1,300,000
+# REFERENCE.md — 378 lines vs 1,300,000
 
 A map from this repo's spine to [xai-org/grok-build](https://github.com/xai-org/grok-build),
 xAI's production coding agent: ~1.3M lines of Rust, Apache 2.0, published as a
 periodic export from their internal monorepo.
 
-Two data points, per subsystem: **miniagent (309 lines of code) → grok-build (1.3M)**.
+Two data points, per subsystem: **miniagent (378-line spine) → grok-build (1.3M)**.
 
 Measured, not estimated:
 
-| | Lines |
-|---|---|
-| Code | **309** |
-| Annotation (the docstrings explaining grok) | 260 |
-| **Total** | **569** |
-| Tests | 41, all offline |
+| | code | total |
+|---|---:|---:|
+| The spine (6 files) | **378** | 683 |
+| `verify.py` (failed experiment) | 63 | 126 |
+| **All** | **441** | **809** |
+| Tests | 50, all offline | |
 
-Of those 309 code lines, roughly **110 are JSON tool schemas** — data describing
+Of the spine's 378 code lines, roughly **110 are JSON tool schemas** — data describing
 the tools to the model, not logic. The six tool implementations are ~50 lines
 between them. The agent's actual reasoning machinery is under 200 lines.
 
@@ -48,9 +48,9 @@ permissions, voice, and markdown rendering. The portion that answers *"how does
 an agent work"* is a few thousand lines at most, and its irreducible core — the
 loop — is about ten.
 
-So the ratio isn't 309 : 1,300,000 for the same thing. It's three different things:
+So the ratio isn't 378 : 1,300,000 for the same thing. It's three different things:
 
-- **~309 lines** — the mechanism. What makes it an agent.
+- **~378 lines** — the mechanism. What makes it an agent.
 - **~thousands** — making it reliable. Goal verification, compaction, anchored editing, retries.
 - **1.3M** — making it a *product*. Interface, integrations, distribution, enterprise.
 

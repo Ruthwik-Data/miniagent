@@ -3,13 +3,14 @@
 **xAI's coding agent is 1,300,000 lines of Rust. Its user interface is bigger
 than its agent.**
 
-This is the **309-line spine** underneath — a working coding agent — and a map of
-what the other 1,299,691 lines are actually for.
+This is the **378-line spine** underneath — a working coding agent — and a map of
+what the other 1,299,622 lines are actually for.
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.14-blue)](pyproject.toml)
-[![code](https://img.shields.io/badge/code-309%20lines-brightgreen)](#the-numbers)
-[![tests](https://img.shields.io/badge/tests-41%20offline-brightgreen)](#running-it)
+[![code](https://img.shields.io/badge/spine-378%20lines-brightgreen)](#the-numbers)
+[![ci](https://github.com/Ruthwik-Data/miniagent/actions/workflows/ci.yml/badge.svg)](https://github.com/Ruthwik-Data/miniagent/actions/workflows/ci.yml)
+[![tests](https://img.shields.io/badge/tests-50%20offline-brightgreen)](#running-it)
 
 ![miniagent finding and fixing a real bug](demos/demo.gif)
 
@@ -77,25 +78,54 @@ reported:
 
 > *"I added a `--version` flag... using Typer's callback pattern."*
 
-Nothing in a 309-line agent can catch that. Termination is
+Nothing in a 378-line agent can catch that. Termination is
 `if not reply.tool_calls: return`. **"Done" is the model's opinion.**
 
 That is what grok's 202-line `goal_verifier_prompt.md` exists for — and it is not
 a relic for weaker models. It's for this, on a current model, on a ten-line task.
 → [`self-modification.txt`](demos/self-modification.txt)
 
+#### So we built the verifier. It didn't work.
+
+If "done" is unreliable, check it: a second LLM pass with read-only tools that
+runs the code before accepting the claim. grok's version is 202 lines of prompt
+plus a planner, a strategist, and a sandbox. Ours is 40 lines
+([`verify.py`](miniagent/verify.py), opt-in via `--verify`).
+
+**Three attempts against the known failure. It never reached a verdict.**
+
+| Attempt | What happened |
+|---|---|
+| 1 | Burned all 6 turns on `bash → exit 127` — `pytest` isn't on PATH |
+| 2 | Told it about the venv. It tried to `edit_file` — **the judge modifying the evidence.** Made the tools read-only |
+| 3 | Still used all 10 turns without ruling |
+
+Meanwhile the agent degenerated: eight consecutive `2 matches found; old_string
+must be unique`, then it abandoned `edit_file` and `write`-overwrote the whole
+file. **Verification made things worse** — 18 turns instead of 6, more spend, a
+more broken file.
+
+**The finding:** the *idea* of a verifier is trivially reproducible in 40 lines.
+The *reliability* is not — and the reliability is what grok's other 162 lines, the
+planner, and the sandbox are buying. A judge with broken tools is worse than no
+judge: it costs turns and returns nothing.
+→ [`verifier-experiment.txt`](demos/verifier-experiment.txt)
+
 ---
 
 ## The numbers
 
-| miniagent | |
-|---|---:|
-| **Code** | **309** |
-| Annotation (docstrings explaining grok) | 260 |
-| Tests (all offline) | 41 |
+| miniagent | code | total |
+|---|---:|---:|
+| **The spine** (6 files) | **378** | 683 |
+| `verify.py` (the failed experiment) | 63 | 126 |
+| **All** | **441** | **809** |
 
-~110 of those 309 code lines are **JSON tool schemas** — data describing tools to
-the model, not logic. All six tool implementations together are ~50 lines.
+Tests: **50**, all offline, zero API spend.
+
+~110 of the spine's 378 code lines are **JSON tool schemas** — data describing
+tools to the model, not logic. All six tool implementations together are ~50
+lines. Nearly half of every file is annotation explaining what grok does instead.
 
 | grok-build | |
 |---|---:|
@@ -142,9 +172,10 @@ Any litellm model: `--model claude-sonnet-5`, `--model openrouter/...`
 | `--session <id>` | Resume a specific session |
 | `--model <str>` | Any litellm model string |
 | `--max-turns <n>` | Cap loop iterations (default 25) |
+| `--verify` | Second LLM pass checks the work before accepting "done" ([it doesn't work](#so-we-built-the-verifier-it-didnt-work)) |
 
 ```bash
-.venv/bin/pytest    # 41 tests, zero API calls
+.venv/bin/pytest    # 50 tests, zero API calls
 ```
 
 Every test runs against a `FakeLLM` with scripted tool calls. The loop's
