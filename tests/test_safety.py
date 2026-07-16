@@ -1,4 +1,4 @@
-from miniagent.safety import confirm, RISKY
+from miniagent.safety import RISKY, confirm
 from miniagent.tools import bash
 
 
@@ -24,7 +24,7 @@ def test_auto_bypasses_the_gate_without_asking():
 
 
 def test_bash_is_the_only_risky_tool():
-    assert RISKY == {"bash"}
+    assert {"bash"} == RISKY
 
 
 def test_bash_returns_exit_code_and_output(tmp_path):

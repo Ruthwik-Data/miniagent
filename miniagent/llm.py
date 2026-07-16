@@ -7,6 +7,11 @@ concept. Swapping models is a string.
 """
 import litellm
 
+# litellm prints its own "Give Feedback / Get Help" banner and debug chatter on
+# every error. The user's problem is a bad API key; the framework's issue
+# tracker is not the answer to it.
+litellm.suppress_debug_info = True
+
 DEFAULT_MODEL = "gpt-4o-mini"
 
 

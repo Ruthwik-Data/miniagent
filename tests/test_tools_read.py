@@ -1,4 +1,4 @@
-from miniagent.tools import read_file, list_dir, grep
+from miniagent.tools import grep, list_dir, read_file
 
 
 def test_read_file_adds_line_numbers(tmp_path):

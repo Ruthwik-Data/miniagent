@@ -1,7 +1,7 @@
 import json
 
-from miniagent.agent import run, dispatch
-from tests.fakes import FakeLLM, FakeReply, FakeToolCall, FakeFunction
+from miniagent.agent import dispatch, run
+from tests.fakes import FakeFunction, FakeLLM, FakeReply, FakeToolCall
 
 
 def _call(id, name, **args):

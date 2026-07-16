@@ -36,3 +36,34 @@ def test_cli_resume_loads_the_latest_session(monkeypatch, tmp_path):
     result = runner.invoke(app, ["carry on", "--resume"])
     assert result.exit_code == 0
     assert seen["messages"][1]["content"] == "earlier"
+
+
+def test_cli_prints_one_line_for_a_bad_api_key(monkeypatch):
+    # Was: ~200 lines of litellm traceback to explain a one-line problem.
+    class AuthenticationError(Exception):
+        pass
+
+    def boom(prompt, **kw):
+        raise AuthenticationError("Incorrect API key provided: sk-proj-xxx")
+
+    monkeypatch.setattr("miniagent.cli.run", boom)
+    result = runner.invoke(app, ["do a thing"])
+
+    assert result.exit_code == 1
+    assert len(result.output.strip().splitlines()) <= 2
+    assert "API key" in result.output
+
+
+def test_cli_explains_the_context_window_wall(monkeypatch):
+    class ContextWindowExceededError(Exception):
+        pass
+
+    def boom(prompt, **kw):
+        raise ContextWindowExceededError("128000 tokens")
+
+    monkeypatch.setattr("miniagent.cli.run", boom)
+    result = runner.invoke(app, ["do a thing"])
+
+    assert result.exit_code == 1
+    assert "context window" in result.output
+    assert "compaction" in result.output

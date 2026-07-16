@@ -1,0 +1,40 @@
+name: ci
+
+# No secrets, no API key, no network to a model provider. Every test runs
+# against tests/fakes.py — the loop's correctness has nothing to do with the
+# model, so it is tested without one. That is what makes this workflow free
+# and fast, and it is the same move grok-build makes in its hashline
+# benchmark, which measures an edit format with no LLM in it at all.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest -q
+
+      - name: Assert the tests never call a model
+        # If a test ever reaches a provider, CI would start needing secrets and
+        # money. Fail loudly the first time that happens rather than quietly
+        # paying for it.
+        env:
+          OPENAI_API_KEY: "sk-proj-ci-must-never-need-this"
+        run: pytest -q

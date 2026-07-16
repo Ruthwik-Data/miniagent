@@ -1,4 +1,4 @@
-from tests.fakes import FakeLLM, FakeReply, FakeToolCall, FakeFunction
+from tests.fakes import FakeFunction, FakeLLM, FakeReply, FakeToolCall
 
 
 def test_fake_llm_returns_scripted_replies_in_order():
