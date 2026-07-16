@@ -15,6 +15,7 @@ The whole file is deterministic: no tool here knows an LLM exists. That is
 what makes every one of them testable for free.
 """
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -106,12 +107,34 @@ def write(path: str, content: str) -> str:
     return f"wrote {len(content)} bytes to {path}"
 
 
+def bash(command: str, cwd: str = ".") -> str:
+    """Run a shell command. Returns exit code plus combined output.
+
+    The only tool gated by safety.confirm(), because it is the only one
+    that can do anything to anything.
+
+    grok-build instead runs commands through xai-grok-sandbox with a
+    permissions engine and configurable approval rules. We ask a yes/no
+    question. The 120s timeout is the whole resource story here; theirs
+    has background tasks, monitors, and kill_task.
+    """
+    try:
+        r = subprocess.run(
+            command, shell=True, capture_output=True, text=True, cwd=cwd, timeout=120
+        )
+    except subprocess.TimeoutExpired:
+        return "error: command timed out after 120s"
+    output = (r.stdout + r.stderr).strip()
+    return f"exit {r.returncode}\n{output}" if output else f"exit {r.returncode}"
+
+
 TOOLS = {
     "read_file": read_file,
     "list_dir": list_dir,
     "grep": grep,
     "edit_file": edit_file,
     "write": write,
+    "bash": bash,
 }
 
 SCHEMAS = [
@@ -193,6 +216,25 @@ SCHEMAS = [
                     "content": {"type": "string", "description": "Full file contents."},
                 },
                 "required": ["path", "content"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "bash",
+            "description": (
+                "Run a shell command and return its exit code and output. "
+                "Requires user confirmation unless --auto is set. Prefer the "
+                "dedicated file tools for reading and editing."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "The command to run."},
+                    "cwd": {"type": "string", "description": "Working directory."},
+                },
+                "required": ["command"],
             },
         },
     },

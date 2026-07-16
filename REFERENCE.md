@@ -54,7 +54,7 @@ design. It's product.
 - [ ] **The loop** — *Task 7*
 - [x] [**Tools: read, list, grep**](#tools-read-list-grep)
 - [x] [**Tools: edit and write**](#tools-edit-and-write)
-- [ ] **Tools: bash and safety** — *Task 5*
+- [x] [**Tools: bash and safety**](#tools-bash-and-safety)
 - [ ] **Sessions and the stateless model** — *Task 6*
 - [ ] **What we left out, and why** — *Task 9*
 
@@ -178,6 +178,62 @@ under version control and are recoverable; `bash` can do anything to anything.
 Gating writes would mean confirming every file the agent creates — which trains
 you to hit `y` reflexively and makes the `bash` gate worth less. **A gate that
 fires constantly is a gate nobody reads.**
+
+---
+
+## Tools: bash and safety
+
+**Ours:** ~20 lines of `bash`, ~35 lines of gate.
+**grok-build:** `xai-grok-sandbox`, a permissions engine, and a 45-line system
+prompt that teaches the concept.
+
+### What grok-build does
+
+Two completely different mechanisms, and the interesting one isn't the code.
+
+**In code:** `xai-grok-sandbox` sandboxes execution. `xai-grok-workspace/src/permission/`
+holds a rules engine with pattern matching, filters, and actions. `/always-approve`
+persists decisions. Background execution runs through `scheduler`, `monitor`, and
+`kill_task`.
+
+**In prose:** the `<action_safety>` section of `templates/prompt.md` — plain
+English, addressed to the model:
+
+> *Weigh each action by how easily it can be undone and how far its effects
+> reach... Confirming is cheap; a mistaken action is not... One approval is not a
+> blank check.*
+
+It then enumerates categories: destructive (`rm -rf`, dropping tables),
+irreversible (force-push, `git reset --hard`), and *visible to others* (pushing,
+commenting on PRs, sending messages).
+
+### The minimum
+
+`RISKY = {"bash"}` and a `y/N` prompt. Thirty-five lines.
+
+### What the extra lines buy
+
+**Generalization.** This is the real finding, and it surprised me.
+
+Our gate is code, so it catches exactly what we enumerated: the string `"bash"`.
+It cannot tell `ls` from `rm -rf /` — both get the same prompt, and a prompt that
+fires on `ls` is one you learn to dismiss.
+
+Grok's primary safety mechanism is *prose in a prompt*, which generalizes to
+situations the author never imagined. The model reads "weigh reversibility and
+blast radius" and applies it to a tool that didn't exist when the sentence was
+written. **You cannot write that in a rules engine** — which is presumably why
+they have both, with the sandbox as the floor under the judgment rather than a
+replacement for it.
+
+That inverts the intuition. The instinct is that real safety is enforced in code
+and prompts are soft. But the enumerable part is the *cheap* part; the part that
+scales is the paragraph.
+
+### The finding
+
+**The most sophisticated safety machinery in a 1.3M-line agent is 15 lines of
+English.** Everything else is the floor beneath it.
 
 ---
 
