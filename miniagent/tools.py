@@ -36,12 +36,32 @@ def list_dir(path: str = ".") -> str:
     return "\n".join(f"{'d' if e.is_dir() else 'f'} {e.name}" for e in entries)
 
 
+# Directories a search must never descend into. .miniagent holds the session
+# transcript being written *by the loop that is searching* — without this,
+# grep finds the agent's own conversation, appends it to the conversation, and
+# the next grep finds more of it. That is not context drift, it is a feedback
+# loop: this exact bug hit 142,984 tokens against a 128,000 limit in six turns
+# (see demos/context-window-wall.txt).
+#
+# This is what grok-build's gitignore.rs is really for. It reads like politeness
+# about node_modules. It isn't — a search tool that can see the agent's own state
+# is a self-amplifying context bomb.
+SEARCH_SKIP = {".miniagent", ".git", ".venv", "__pycache__", "node_modules", "target"}
+
+
 def grep(pattern: str, path: str = ".") -> str:
-    """Regex search across files under path. Returns file:lineno:line per hit."""
+    """Regex search across files under path. Returns file:lineno:line per hit.
+
+    Skips SEARCH_SKIP directories — most importantly the agent's own session
+    store. See SEARCH_SKIP above for why that is load-bearing.
+    """
     rx = re.compile(pattern)
+    root = Path(path)
     hits = []
-    for f in sorted(Path(path).rglob("*")):
+    for f in sorted(root.rglob("*")):
         if not f.is_file():
+            continue
+        if SEARCH_SKIP & set(f.parts):
             continue
         try:
             text = f.read_text()

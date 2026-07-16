@@ -1,0 +1,7 @@
+  bash → exit 1
+  read_file → 1	from calc import add
+  read_file → 1	def add(a, b):
+  edit_file → edited calc.py
+  bash → exit 0
+
+I fixed the bug in the `add` function by changing the operation from subtraction to addition. The tests now pass successfully.

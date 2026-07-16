@@ -1,0 +1,278 @@
+  grep → src/types/tool_index.rs:58:pub trait ToolSearchIndex: Send + Sync {
+  grep → src/registry/types.rs:519:pub struct ToolRegistryBuilder {
+  grep → no matches
+  grep → no matches
+  grep → .miniagent/sessions/20260716-012550-eb3b.json:27:          "arguments": "{\"patt
+  grep → .miniagent/sessions/20260716-012550-eb3b.json:8:    "content": "Explain how tool
+
+[1;31mGive Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new[0m
+LiteLLM.Info: If you need to debug this error, use `litellm._turn_on_debug()'.
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/llms/ope │
+│ nai/openai.py:852 in completion                                              │
+│                                                                              │
+│    849 │   │   │   │   │   ):                                                │
+│    850 │   │   │   │   │   │                                                 │
+│        litellm.remove_index_from_tool_calls(messages=messages)               │
+│    851 │   │   │   │   │   else:                                             │
+│ ❱  852 │   │   │   │   │   │   raise e                                       │
+│    853 │   │   except OpenAIError as e:                                      │
+│    854 │   │   │   raise e                                                   │
+│    855 │   │   except Exception as e:                                        │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/llms/ope │
+│ nai/openai.py:780 in completion                                              │
+│                                                                              │
+│    777 │   │   │   │   │   │   (                                             │
+│    778 │   │   │   │   │   │   │   headers,                                  │
+│    779 │   │   │   │   │   │   │   response,                                 │
+│ ❱  780 │   │   │   │   │   │   ) =                                           │
+│        self.make_sync_openai_chat_completion_request(                        │
+│    781 │   │   │   │   │   │   │   openai_client=openai_client,              │
+│    782 │   │   │   │   │   │   │   data=data,                                │
+│    783 │   │   │   │   │   │   │   timeout=timeout,                          │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/litellm_ │
+│ core_utils/logging_utils.py:344 in sync_wrapper                              │
+│                                                                              │
+│   341 │   │   │   parent_otel_span =                                         │
+│       _get_parent_otel_span_from_logging_obj(logging_obj)                    │
+│   342 │   │   │                                                              │
+│   343 │   │   │   try:                                                       │
+│ ❱ 344 │   │   │   │   result = func(*args, **kwargs)                         │
+│   345 │   │   │   │   return result                                          │
+│   346 │   │   │   finally:                                                   │
+│   347 │   │   │   │   end_time = datetime.now()                              │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/llms/ope │
+│ nai/openai.py:503 in make_sync_openai_chat_completion_request                │
+│                                                                              │
+│    500 │   │   │   │   │   )                                                 │
+│    501 │   │   │   │   )                                                     │
+│    502 │   │   │   else:                                                     │
+│ ❱  503 │   │   │   │   raise e                                               │
+│    504 │                                                                     │
+│    505 │   async def _call_agentic_completion_hooks_openai(                  │
+│    506 │   │   self,                                                         │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/llms/ope │
+│ nai/openai.py:478 in make_sync_openai_chat_completion_request                │
+│                                                                              │
+│    475 │   │   """                                                           │
+│    476 │   │   raw_response = None                                           │
+│    477 │   │   try:                                                          │
+│ ❱  478 │   │   │   raw_response =                                            │
+│        openai_client.chat.completions.with_raw_response.create(              │
+│    479 │   │   │   │   **data, timeout=timeout                               │
+│    480 │   │   │   )                                                         │
+│    481                                                                       │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/openai/_legacy_r │
+│ esponse.py:367 in wrapped                                                    │
+│                                                                              │
+│   364 │   │                                                                  │
+│   365 │   │   kwargs["extra_headers"] = extra_headers                        │
+│   366 │   │                                                                  │
+│ ❱ 367 │   │   return cast(LegacyAPIResponse[R], func(*args, **kwargs))       │
+│   368 │                                                                      │
+│   369 │   return wrapped                                                     │
+│   370                                                                        │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/openai/_utils/_u │
+│ tils.py:286 in wrapper                                                       │
+│                                                                              │
+│   283 │   │   │   │   │   else:                                              │
+│   284 │   │   │   │   │   │   msg = f"Missing required argument:             │
+│       {quote(missing[0])}"                                                   │
+│   285 │   │   │   │   raise TypeError(msg)                                   │
+│ ❱ 286 │   │   │   return func(*args, **kwargs)                               │
+│   287 │   │                                                                  │
+│   288 │   │   return wrapper  # type: ignore                                 │
+│   289                                                                        │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/openai/resources │
+│ /chat/completions/completions.py:1211 in create                              │
+│                                                                              │
+│   1208 │   │   timeout: float | httpx.Timeout | None | NotGiven = not_given, │
+│   1209 │   ) -> ChatCompletion | Stream[ChatCompletionChunk]:                │
+│   1210 │   │   validate_response_format(response_format)                     │
+│ ❱ 1211 │   │   return self._post(                                            │
+│   1212 │   │   │   "/chat/completions",                                      │
+│   1213 │   │   │   body=maybe_transform(                                     │
+│   1214 │   │   │   │   {                                                     │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/openai/_base_cli │
+│ ent.py:1297 in post                                                          │
+│                                                                              │
+│   1294 │   │   opts = FinalRequestOptions.construct(                         │
+│   1295 │   │   │   method="post", url=path, json_data=body, content=content, │
+│        files=to_httpx_files(files), **options                                │
+│   1296 │   │   )                                                             │
+│ ❱ 1297 │   │   return cast(ResponseT, self.request(cast_to, opts,            │
+│        stream=stream, stream_cls=stream_cls))                                │
+│   1298 │                                                                     │
+│   1299 │   def patch(                                                        │
+│   1300 │   │   self,                                                         │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/openai/_base_cli │
+│ ent.py:1070 in request                                                       │
+│                                                                              │
+│   1067 │   │   │   │   │   err.response.read()                               │
+│   1068 │   │   │   │                                                         │
+│   1069 │   │   │   │   log.debug("Re-raising status error")                  │
+│ ❱ 1070 │   │   │   │   raise                                                 │
+│        self._make_status_error_from_response(err.response) from None         │
+│   1071 │   │   │                                                             │
+│   1072 │   │   │   break                                                     │
+│   1073                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum 
+context length is 128000 tokens. However, your messages resulted in 142984 
+tokens (142676 in the messages, 308 in the functions). Please reduce the length 
+of the messages or functions.", 'type': 'invalid_request_error', 'param': 
+'messages', 'code': 'context_length_exceeded'}}
+
+During handling of the above exception, another exception occurred:
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/main.py: │
+│ 2698 in completion                                                           │
+│                                                                              │
+│   2695 │   │   │   │   │   original_response=str(e),                         │
+│   2696 │   │   │   │   │   additional_args={"headers": headers},             │
+│   2697 │   │   │   │   )                                                     │
+│ ❱ 2698 │   │   │   │   raise e                                               │
+│   2699 │   │   │                                                             │
+│   2700 │   │   │   if optional_params.get("stream", False):                  │
+│   2701 │   │   │   │   ## LOGGING                                            │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/main.py: │
+│ 2670 in completion                                                           │
+│                                                                              │
+│   2667 │   │   │   │   │   │   provider_config=provider_config,              │
+│   2668 │   │   │   │   │   )                                                 │
+│   2669 │   │   │   │   else:                                                 │
+│ ❱ 2670 │   │   │   │   │   response = openai_chat_completions.completion(    │
+│   2671 │   │   │   │   │   │   model=model,                                  │
+│   2672 │   │   │   │   │   │   messages=messages,                            │
+│   2673 │   │   │   │   │   │   headers=headers,                              │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/llms/ope │
+│ nai/openai.py:863 in completion                                              │
+│                                                                              │
+│    860 │   │   │   error_body = getattr(e, "body", None)                     │
+│    861 │   │   │   if error_headers is None and error_response:              │
+│    862 │   │   │   │   error_headers = getattr(error_response, "headers",    │
+│        None)                                                                 │
+│ ❱  863 │   │   │   raise OpenAIError(                                        │
+│    864 │   │   │   │   status_code=status_code,                              │
+│    865 │   │   │   │   message=error_text,                                   │
+│    866 │   │   │   │   headers=error_headers,                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+OpenAIError: Error code: 400 - {'error': {'message': "This model's maximum 
+context length is 128000 tokens. However, your messages resulted in 142984 
+tokens (142676 in the messages, 308 in the functions). Please reduce the length 
+of the messages or functions.", 'type': 'invalid_request_error', 'param': 
+'messages', 'code': 'context_length_exceeded'}}
+
+During handling of the above exception, another exception occurred:
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /Users/ruthvik/miniagent/miniagent/cli.py:48 in main                         │
+│                                                                              │
+│   45 │   if session_id is None:                                              │
+│   46 │   │   session_id = sessions.new_id()                                  │
+│   47 │                                                                       │
+│ ❱ 48 │   text, _ = run(                                                      │
+│   49 │   │   prompt,                                                         │
+│   50 │   │   messages=messages,                                              │
+│   51 │   │   auto=auto,                                                      │
+│                                                                              │
+│ /Users/ruthvik/miniagent/miniagent/agent.py:115 in run                       │
+│                                                                              │
+│   112 │                                                                      │
+│   113 │   for turn in range(max_turns):                                      │
+│   114 │   │   kwargs = {"model": model} if model else {}                     │
+│ ❱ 115 │   │   reply = llm(messages, tools=SCHEMAS, **kwargs)                 │
+│   116 │   │   messages.append(_reply_to_message(reply))                      │
+│   117 │   │                                                                  │
+│   118 │   │   # No tool calls means the model considers the task finished.   │
+│                                                                              │
+│ /Users/ruthvik/miniagent/miniagent/llm.py:25 in complete                     │
+│                                                                              │
+│   22 │   (list | None). Tool calls carry .id and .function.{name,            │
+│      arguments},                                                             │
+│   23 │   where arguments is a JSON *string*.                                 │
+│   24 │   """                                                                 │
+│ ❱ 25 │   resp = litellm.completion(                                          │
+│   26 │   │   model=model,                                                    │
+│   27 │   │   messages=messages,                                              │
+│   28 │   │   tools=tools,                                                    │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/utils.py │
+│ :1769 in wrapper                                                             │
+│                                                                              │
+│   1766 │   │   │   │   logging_obj.failure_handler(                          │
+│   1767 │   │   │   │   │   e, traceback_exception, start_time, end_time      │
+│   1768 │   │   │   │   )  # DO NOT MAKE THREADED - router retry fallback     │
+│        relies on this!                                                       │
+│ ❱ 1769 │   │   │   raise e                                                   │
+│   1770 │                                                                     │
+│   1771 │   @wraps(original_function)                                         │
+│   1772 │   async def wrapper_async(*args, **kwargs):  # noqa: PLR0915        │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/utils.py │
+│ :1590 in wrapper                                                             │
+│                                                                              │
+│   1587 │   │   │   │   except Exception as e:                                │
+│   1588 │   │   │   │   │   print_verbose(f"Error while checking max token    │
+│        limit: {str(e)}")                                                     │
+│   1589 │   │   │   # MODEL CALL                                              │
+│ ❱ 1590 │   │   │   result = original_function(*args, **kwargs)               │
+│   1591 │   │   │   end_time = datetime.datetime.now()                        │
+│   1592 │   │   │   if _is_streaming_request(                                 │
+│   1593 │   │   │   │   kwargs=kwargs,                                        │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/main.py: │
+│ 4411 in completion                                                           │
+│                                                                              │
+│   4408 │   │   return response                                               │
+│   4409 │   except Exception as e:                                            │
+│   4410 │   │   ## Map to OpenAI Exception                                    │
+│ ❱ 4411 │   │   raise exception_type(                                         │
+│   4412 │   │   │   model=model,                                              │
+│   4413 │   │   │   custom_llm_provider=custom_llm_provider,                  │
+│   4414 │   │   │   original_exception=e,                                     │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/litellm_ │
+│ core_utils/exception_mapping_utils.py:2456 in exception_type                 │
+│                                                                              │
+│   2453 │   │   # don't let an error with mapping interrupt the user from     │
+│        receiving an error from the llm api calls                             │
+│   2454 │   │   if exception_mapping_worked:                                  │
+│   2455 │   │   │   setattr(e, "litellm_response_headers",                    │
+│        litellm_response_headers)                                             │
+│ ❱ 2456 │   │   │   raise e                                                   │
+│   2457 │   │   else:                                                         │
+│   2458 │   │   │   for error_type in litellm.LITELLM_EXCEPTION_TYPES:        │
+│   2459 │   │   │   │   if isinstance(e, error_type):                         │
+│                                                                              │
+│ /Users/ruthvik/miniagent/.venv/lib/python3.14/site-packages/litellm/litellm_ │
+│ core_utils/exception_mapping_utils.py:400 in exception_type                  │
+│                                                                              │
+│    397 │   │   │   │   │   )                                                 │
+│    398 │   │   │   │   elif                                                  │
+│        ExceptionCheckers.is_error_str_context_window_exceeded(error_str):    │
+│    399 │   │   │   │   │   exception_mapping_worked = True                   │
+│ ❱  400 │   │   │   │   │   raise ContextWindowExceededError(                 │
+│    401 │   │   │   │   │   │   message=f"ContextWindowExceededError:         │
+│        {exception_provider} - {message}",                                    │
+│    402 │   │   │   │   │   │   llm_provider=custom_llm_provider,             │
+│    403 │   │   │   │   │   │   model=model,                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ContextWindowExceededError: litellm.ContextWindowExceededError: 
+litellm.BadRequestError: ContextWindowExceededError: OpenAIException - This 
+model's maximum context length is 128000 tokens. However, your messages resulted
+in 142984 tokens (142676 in the messages, 308 in the functions). Please reduce 
+the length of the messages or functions.

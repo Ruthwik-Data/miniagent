@@ -13,7 +13,7 @@ Measured, not estimated:
 | Code | **309** |
 | Annotation (the docstrings explaining grok) | 260 |
 | **Total** | **569** |
-| Tests | 39, all offline |
+| Tests | 41, all offline |
 
 Of those 309 code lines, roughly **110 are JSON tool schemas** — data describing
 the tools to the model, not logic. The six tool implementations are ~50 lines
@@ -104,6 +104,10 @@ stops asking for tools. There is no completion detector, no goal check, no "done
 signal. `if not reply.tool_calls: return` is the entire termination logic. The
 agent stops when the model has nothing left to ask for.
 
+That is elegant, and it is also the sharpest weakness in this repo. **"Done" is
+the model's opinion, and the model can be wrong.** See
+[When the model lies about being finished](#when-the-model-lies-about-being-finished).
+
 **3. Everything is resent, every turn.** Turn 10 resends turns 1–9 in full. The
 model is stateless; the transcript is the only memory. This is why cost grows
 quadratically with turns and why the context limit is the binding constraint on
@@ -135,20 +139,72 @@ Not a better loop — the same loop, plus:
 - **Compaction** for when the transcript outgrows the window.
 - **Telemetry, crash handling, circuit breakers, update machinery.**
 
-### The finding
+### When the model lies about being finished
+
+*This section exists because the demo failed. Transcript:
+[demos/self-modification.txt](demos/self-modification.txt).*
+
+We asked the agent to add a `--version` flag to its own `cli.py`. It read the
+file, made one edit, and reported:
+
+> *"I added a `--version` flag to miniagent/cli.py that prints '0.1.0' and exits
+> immediately using Typer's callback pattern."*
+
+Here is what it actually wrote:
+
+```python
+@app.command()          # ← dangling decorator
+
+@app.callback()
+def version_callback(ctx: typer.Context):
+    if ctx.invoked_subcommand is None:
+        typer.echo('0.1.0')
+        raise typer.Exit()
+def main(               # ← now undecorated. the CLI is broken.
+```
+
+It wedged a callback between a decorator and the function it decorates. `main` is
+no longer registered as a command. `--version` doesn't work. **Three tests broke.**
+The agent never ran the code, never ran the tests, and stopped with a confident
+summary.
+
+**Nothing in this repo could have caught that**, because the loop's entire
+termination rule is `if not reply.tool_calls: return`. The model decides when
+it's done. We take its word.
+
+Our system prompt even *encourages* it — *"When the task is complete, reply with a
+short plain-text summary and no tool calls."* We told it how to declare victory.
+We never told it to check.
+
+### The finding, corrected
+
+Earlier in this document I called grok's goal planner/verifier stack "a bet on
+model weakness" — with the implication that it's scaffolding for a problem models
+are outgrowing. **That framing was too comfortable, and this demo refutes it.**
+
+`gpt-4o-mini` — a current model, on a 10-line task, in its own codebase —
+confidently reported success on a change that broke the file. That is not a
+weakness receding into history. It is the failure mode, live, on the first
+attempt.
+
+So their **202-line `goal_verifier_prompt.md`** is not a hedge against models of
+the past. It's addressing the thing that just happened here. The same for the
+239-line planner. What looked like over-engineering from the outside is a
+scar-tissue response to exactly this behavior at scale.
+
+The honest split still holds — *bets on model weakness* shrink, *bets on human
+needs* grow — but **the shrinking pile is not shrinking yet.** Anyone building a
+thin harness on the theory that the model will cover for them should run this
+demo first.
 
 **The loop is ten lines. It has always been ten lines.** The interesting question
 isn't how to write it — it's which of grok's 335,000 other lines are compensating
-for the model, and which are serving the product.
-
-The goal planner/verifier stack is the sharpest example: it exists because a
-model left to its own devices loses the plot on long tasks. **That scaffolding is
-a bet on model weakness.** If models keep improving, it's dead weight — the
-harness shrinks as the model grows. The settings modal, by contrast, isn't there
-because the model is weak. It's there because humans have preferences.
+for the model, and which are serving the product. The settings modal isn't there
+because the model is weak; it's there because humans have preferences. The
+verifier is there because the model told us it was done when it wasn't.
 
 Most of a coding agent is not intelligence, and not even agent design. It's
-product.
+product — and a large part of the rest is not trusting the model's self-report.
 
 ---
 

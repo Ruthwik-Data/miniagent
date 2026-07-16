@@ -10,7 +10,7 @@ actually for.
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.14-blue)](pyproject.toml)
 [![code](https://img.shields.io/badge/code-309%20lines-brightgreen)](#the-numbers)
-[![tests](https://img.shields.io/badge/tests-39%20offline-brightgreen)](#tests)
+[![tests](https://img.shields.io/badge/tests-41%20offline-brightgreen)](#tests)
 
 The map is **[REFERENCE.md](REFERENCE.md)**. The code is the exhibit.
 
@@ -52,7 +52,7 @@ Three things it makes obvious that reading about agents does not:
 | Code | **309** | `xai-grok-pager` (TUI) | **414,627** |
 | Annotation | 260 | `xai-grok-shell` (runtime) | 335,843 |
 | Total | 569 | `xai-grok-tools` | 112,275 |
-| Tests | 39 | `xai-grok-workspace` | 76,730 |
+| Tests | 41 | `xai-grok-workspace` | 76,730 |
 
 Two things hide in that table.
 
@@ -104,23 +104,36 @@ Sort grok's 1.3M lines by *why they exist* and they fall into two piles:
 That's the honest answer to *what do 1.3M lines buy*: a shrinking pile and a
 growing one. The growing pile is the bigger one.
 
-### One deliberate flaw
+### What broke when we actually ran it
 
-`edit_file` uses **naive string matching on purpose**. It breaks when the model
-targets text it misremembers from three turns ago.
+Three demos, three findings — **none of them the one we predicted.**
 
-That's not an oversight — it's the exact problem xAI built **hashline** to solve:
-anchored editing where every line carries a content hash, three candidate
-schemes, an 887-line benchmark with no LLM in it, shipped behind a *server-side
-flag*. They haven't settled it either. Naive matching is the baseline they're
-still measuring against.
+**The bug we shipped on purpose refused to fail.** `edit_file` uses naive string
+matching, and the plan was to catch it breaking on stale content — the exact
+problem xAI built **hashline** to solve. Two attempts, including five sequential
+edits to the same line with no re-reads, and `gpt-4o-mini` tracked every one. At
+this scale, with this model, the problem hashline solves **did not reproduce.**
+
+**The bug we didn't know about nearly ate the context window.** `grep` searched
+`.miniagent/sessions/` — the agent's own transcript, being written by the loop
+that was searching. It fed the conversation back into itself: 142,984 tokens
+against a 128,000 limit in six turns. Not drift, a *feedback loop*. That's what
+grok's `gitignore.rs` is really for.
+→ [demos/context-window-wall.txt](demos/context-window-wall.txt)
+
+**The model lied about being done.** Asked to add a `--version` flag to its own
+CLI, it made a broken edit, never ran the code, and reported success. Three tests
+failed. Nothing here could have caught it — the loop's whole termination rule is
+`if not reply.tool_calls: return`. **"Done" is the model's opinion.** That is what
+grok's 202-line `goal_verifier_prompt.md` exists for, and it is not a relic.
+→ [demos/self-modification.txt](demos/self-modification.txt)
 
 ---
 
 ## Tests
 
 ```bash
-.venv/bin/pytest    # 39 tests, zero API calls
+.venv/bin/pytest    # 41 tests, zero API calls
 ```
 
 Every test runs against a `FakeLLM` returning scripted tool calls. The loop's

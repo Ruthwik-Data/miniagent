@@ -1,0 +1,7 @@
+  list_dir → f mod.rs
+  grep → types.rs:29:/// [`ToolRegistryBuilder::new`].
+  read_file → 520	    tools: HashMap<String, ToolEntry>,
+  read_file → 42	static TOOL_PACKS: OnceLock<Mutex<Vec<ToolPack>>> = OnceLock::new();
+  read_file → 124	    pub fn for_tool<T>() -> Self
+
+The `ToolRegistry` is part of a system that manages tools and their configurations, allowing for the registration of built-in tools and out-of-tree tool packs. It utilizes a `ToolRegistryBuilder` to facilitate the registration process, which includes methods for registering tools with or without parameters. The registry supports dynamic tool management through a shared local registry and ensures that tool packs can be registered idempotently, meaning they can be added multiple times without adverse effects.

@@ -1,0 +1,4 @@
+  read_file → 1	"""typer entrypoint.
+  edit_file → edited miniagent/cli.py
+
+I added a `--version` flag to `miniagent/cli.py` that prints '0.1.0' and exits immediately using Typer's callback pattern. The version check is implemented in a callback function that triggers when no subcommand is invoked.
