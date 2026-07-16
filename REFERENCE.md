@@ -51,12 +51,94 @@ design. It's product.
 
 ## Sections
 
-- [ ] **The loop** — *Task 7*
+- [x] [**The loop**](#the-loop)
 - [x] [**Tools: read, list, grep**](#tools-read-list-grep)
 - [x] [**Tools: edit and write**](#tools-edit-and-write)
 - [x] [**Tools: bash and safety**](#tools-bash-and-safety)
 - [x] [**Sessions and the stateless model**](#sessions-and-the-stateless-model)
 - [ ] **What we left out, and why** — *Task 9*
+
+---
+
+## The loop
+
+**Ours:** ~15 lines of actual loop inside an 80-line file.
+**grok-build:** `xai-grok-shell`, 335,843 lines.
+
+### The whole mechanism
+
+```python
+messages = [system_prompt, user_prompt]
+for turn in range(max_turns):
+    reply = llm(messages, tools=SCHEMAS)
+    if not reply.tool_calls:
+        return reply.content            # the model stopped asking. it's done.
+    for call in reply.tool_calls:
+        result = dispatch(call)         # your code runs it, not the model
+        messages.append(tool_result(call.id, result))
+```
+
+That is what a coding agent *is*. Everything else in every agent ever shipped is
+quality, interface, or distribution wrapped around this.
+
+### Three things it makes obvious
+
+**1. The model never touches your machine.** It emits JSON saying *"I would like
+to call `bash` with `pytest`."* `dispatch()` runs it. The model is a text
+function that requests actions and reads results — **the agency lives in the loop
+you wrote**, not in the model. Every "autonomous agent" demo is this loop with
+better rendering.
+
+**2. Termination is not a decision you make.** The loop exits when the model
+stops asking for tools. There is no completion detector, no goal check, no "done"
+signal. `if not reply.tool_calls: return` is the entire termination logic. The
+agent stops when the model has nothing left to ask for.
+
+**3. Everything is resent, every turn.** Turn 10 resends turns 1–9 in full. The
+model is stateless; the transcript is the only memory. This is why cost grows
+quadratically with turns and why the context limit is the binding constraint on
+how long an agent can work.
+
+### Errors are messages, not exceptions
+
+`dispatch()` never raises. Every failure returns a *string* the model reads:
+
+```python
+return f"error: unknown tool {name}"
+return f"no match found for that string in {path}"
+```
+
+**There is no retry code in this repo.** `edit_file` returning "no match found"
+*is* the retry mechanism — the model reads it and tries different text. The
+common first mistake is treating the LLM as a caller that must be protected from
+errors, when it's a participant that reads them and adapts.
+
+### What grok's extra 335,000 lines buy
+
+Not a better loop — the same loop, plus:
+
+- **Goal decomposition.** Four LLM roles around one task: a 239-line planner
+  prompt, a 202-line verifier, a strategist, a summarizer. Scaffolding that
+  squeezes reliability out of a model that can't hold the whole job at once.
+- **Leader/stdio/headless entry points**, ACP for editors, session forking.
+- **Effort levels**, background tasks, monitors, interjection, prompt queues.
+- **Compaction** for when the transcript outgrows the window.
+- **Telemetry, crash handling, circuit breakers, update machinery.**
+
+### The finding
+
+**The loop is ten lines. It has always been ten lines.** The interesting question
+isn't how to write it — it's which of grok's 335,000 other lines are compensating
+for the model, and which are serving the product.
+
+The goal planner/verifier stack is the sharpest example: it exists because a
+model left to its own devices loses the plot on long tasks. **That scaffolding is
+a bet on model weakness.** If models keep improving, it's dead weight — the
+harness shrinks as the model grows. The settings modal, by contrast, isn't there
+because the model is weak. It's there because humans have preferences.
+
+Most of a coding agent is not intelligence, and not even agent design. It's
+product.
 
 ---
 
