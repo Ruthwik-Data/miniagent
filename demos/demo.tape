@@ -1,53 +1,39 @@
-# vhs tape — the README demo.
-# Records the agent fixing a genuinely failing test, end to end.
+# vhs tape — the README demo.  Run: cd demos && vhs demo.tape
 #
-#   cd demos && vhs demo.tape
-#
-# Requires: a working provider key exported as OPENAI_API_KEY (or edit the
-# --model flag below for any litellm provider).
-#
-# The setup is real: calc.py has a real bug, test_calc.py really fails, and
-# the agent really fixes it. Nothing here is staged — if the run fails, the
-# GIF shows it failing.
+# Nothing is staged. calc.py has a real bug, the test really fails, and the
+# agent really fixes it. If a run fails, the GIF shows it failing.
 
 Output demo.gif
 
 Set Shell zsh
-Set FontSize 15
-Set Width 1200
-Set Height 760
-Set Padding 22
+Set FontSize 16
+Set Width 1150
+Set Height 440
+Set Padding 20
 Set Theme "Catppuccin Mocha"
-Set TypingSpeed 45ms
-Set PlaybackSpeed 1.0
+Set TypingSpeed 40ms
 
-# --- setup: a real bug in a real repo -------------------------------------
 Hide
-Type "cd $(mktemp -d)" Enter
-Type "printf 'def add(a, b):\n    return a - b\n' > calc.py" Enter
-Type "printf 'from calc import add\n\ndef test_add():\n    assert add(1, 2) == 3\n' > test_calc.py" Enter
-Type "clear" Enter
+Type "cd /tmp/miniagent-demo"
+Enter
+Type "source setup.sh"
+Enter
+Type "clear"
+Enter
 Show
 
-# --- the bug --------------------------------------------------------------
 Type "cat calc.py"
 Enter
-Sleep 1.5s
+Sleep 1200ms
 
-Type "~/miniagent/.venv/bin/pytest -q 2>&1 | tail -3"
+Type "pytest -q 2>&1 | tail -3"
 Enter
-Sleep 3s
+Sleep 2500ms
 
-# --- hand it to the agent -------------------------------------------------
 Type "miniagent 'the tests are failing, fix them' --auto"
 Enter
-Sleep 45s
+Sleep 40s
 
-# --- proof ----------------------------------------------------------------
-Type "cat calc.py"
+Type "pytest -q 2>&1 | tail -2"
 Enter
-Sleep 2s
-
-Type "~/miniagent/.venv/bin/pytest -q 2>&1 | tail -2"
-Enter
-Sleep 4s
+Sleep 3500ms

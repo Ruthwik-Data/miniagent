@@ -14,6 +14,12 @@ actually for.
 
 The map is **[REFERENCE.md](REFERENCE.md)**. The code is the exhibit.
 
+![miniagent finding and fixing a real bug](demos/demo.gif)
+
+*Real run, not a mockup — `calc.py` had a real bug, `pytest` really failed, and
+the agent really fixed it. Regenerate it yourself with
+[`vhs demos/demo.tape`](demos/demo.tape).*
+
 ---
 
 ## The whole agent
@@ -96,13 +102,16 @@ them is the spine — and that list is the finding, not the backlog.**
 Sort grok's 1.3M lines by *why they exist* and they fall into two piles:
 
 - **Bets on model weakness** — goal decomposition, verification, anchored
-  editing, compaction. These exist because the model isn't good enough yet.
-  **They shrink as models improve.**
+  editing, compaction. These exist because the model isn't good enough yet, and
+  should shrink as models improve.
 - **Bets on human needs** — the TUI, settings, sessions, MCP, crash handling.
   Nothing to do with model quality. **They grow forever.**
 
 That's the honest answer to *what do 1.3M lines buy*: a shrinking pile and a
-growing one. The growing pile is the bigger one.
+growing one. The growing pile is much bigger.
+
+**But the shrinking pile isn't shrinking yet** — and we only know that because we
+ran the thing. See below.
 
 ### What broke when we actually ran it
 
