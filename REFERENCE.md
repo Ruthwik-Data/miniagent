@@ -52,11 +52,59 @@ design. It's product.
 ## Sections
 
 - [ ] **The loop** — *Task 7*
-- [ ] **Tools: read, list, grep** — *Task 3*
+- [x] [**Tools: read, list, grep**](#tools-read-list-grep)
 - [ ] **Tools: edit and write** — *Task 4*
 - [ ] **Tools: bash and safety** — *Task 5*
 - [ ] **Sessions and the stateless model** — *Task 6*
 - [ ] **What we left out, and why** — *Task 9*
+
+---
+
+## Tools: read, list, grep
+
+**Ours:** ~90 lines for three tools plus their JSON schemas.
+**grok-build:** `xai-grok-tools` is 112,275 lines.
+
+### What grok-build does
+
+It doesn't implement them. `read_file`, `list_dir`, and `grep_files` under
+`src/implementations/codex/` are **ported from openai/codex**; `read`, `glob`,
+and `grep` under `src/implementations/opencode/` are **ported from sst/opencode**.
+Both are attributed in `THIRD_PARTY_NOTICES.md` with Apache 2.0 §4(b) change
+notices.
+
+grok also ships *two* read tools and *three* edit variants
+(`grok_build`, `grok_build_concise`, `grok_build_hashline`) behind config, plus
+an `lsp` tool for code intelligence.
+
+### The minimum
+
+Three functions, ~90 lines. `read_file` returns line-numbered text; `list_dir`
+marks files and dirs; `grep` returns `file:lineno:line`.
+
+The one non-obvious decision is **line numbers in `read_file`**. They look
+cosmetic and are not: they're what lets the model refer to a location in a later
+turn without re-reading. grok's codex-derived `read_file` does the same.
+
+### What the extra lines buy
+
+Three things, none of them the tool logic:
+
+1. **Variants under experiment.** Three toolsets exist simultaneously so xAI can
+   A/B the *format* the model sees — concise vs. verbose vs. hash-anchored — and
+   flip between them server-side.
+2. **Scale and safety at the edges.** Binary detection, encoding, `.gitignore`
+   respect, huge-file truncation, image handling, path normalization.
+3. **A tool taxonomy.** `tool_taxonomy.rs` maps every tool onto a canonical
+   vocabulary (`read_file` and `Read` both → `Read`) so tools from different
+   harnesses and MCP servers can coexist in one UI.
+
+### The finding
+
+**xAI's tool layer is other people's code, and they say so.** The most
+interesting thing about `xai-grok-tools` isn't in the tools — it's that a
+frontier lab looked at the tool layer and decided it wasn't worth rebuilding.
+The differentiator was somewhere else.
 
 ---
 
