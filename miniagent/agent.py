@@ -99,6 +99,8 @@ def run(
     session_id: str | None = None,
     root=None,
     input_fn=input,
+    verify: bool = False,
+    max_verifications: int = 2,
 ) -> tuple[str, list[dict]]:
     """Run the agent until the model stops asking for tools.
 
@@ -106,17 +108,54 @@ def run(
     concern, not a toy guard: without it, a model that keeps requesting
     tools bills you until you notice. grok's equivalent surface is effort
     levels and background task limits.
+
+    verify=True adds a second LLM pass that checks the work before accepting
+    "done" — see verify.py. Opt-in, because the un-verified failure is a
+    baseline worth keeping reproducible.
     """
+    from miniagent.verify import verify as run_verifier  # late: avoids a cycle
+
     messages = messages or [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.append({"role": "user", "content": prompt})
+    verifications = 0
 
-    for turn in range(max_turns):
+    for _turn in range(max_turns):
         kwargs = {"model": model} if model else {}
         reply = llm(messages, tools=SCHEMAS, **kwargs)
         messages.append(_reply_to_message(reply))
 
-        # No tool calls means the model considers the task finished.
+        # No tool calls means the model *considers* the task finished.
         if not reply.tool_calls:
+            if verify and verifications < max_verifications:
+                verifications += 1
+                print("  — verifying —")
+                complaint = run_verifier(
+                    task=prompt,
+                    report=reply.content or "",
+                    llm=llm,
+                    model=model,
+                    auto=auto,
+                    input_fn=input_fn,
+                )
+                if complaint is not None:
+                    print(f"  ✗ {complaint.splitlines()[0][:90]}")
+                    # Hand the verdict back as a user turn and keep going.
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "A verifier checked your work against the actual "
+                                f"repository and rejected it:\n\n{complaint}\n\n"
+                                "Fix it, then confirm by running the relevant "
+                                "checks yourself."
+                            ),
+                        }
+                    )
+                    if session_id:
+                        sessions.save(session_id, messages, root=root)
+                    continue
+                print("  ✓ verified")
+
             if session_id:
                 sessions.save(session_id, messages, root=root)
             return reply.content, messages
