@@ -155,6 +155,71 @@ they split in two:
 
 ---
 
+## What it's for
+
+**Reading.** That's the primary use. 378 lines is small enough to hold in your
+head in one sitting, and every non-obvious decision carries a note pointing at
+what a 1.3M-line production agent does instead. If you want to know how coding
+agents work, this is a shorter path than the blog posts and a much shorter path
+than grok-build.
+
+**A research bench.** The interesting one. `llm` is injectable and `--model` takes
+any litellm string, so the same tasks run across providers and you can measure
+the difference:
+
+```bash
+miniagent "fix the failing test" --model gpt-4o-mini
+miniagent "fix the failing test" --model claude-sonnet-5 --verify
+```
+
+That's how the findings above were produced. It's a rig for asking *"how much
+harness does this model actually need?"* — swap the model, hold the harness
+fixed, watch what breaks.
+
+**A library.** It's a package, not just a CLI:
+
+```python
+from miniagent.agent import run
+
+text, messages = run("add type hints to utils.py", auto=True, max_turns=10)
+```
+
+**A base to extend.** Tools are a plain dict — adding one is a line and a schema:
+
+```python
+from miniagent.tools import TOOLS, SCHEMAS
+
+TOOLS["deploy"] = lambda env: subprocess.run(["./deploy.sh", env]).returncode
+SCHEMAS.append({"type": "function", "function": {"name": "deploy", ...}})
+```
+
+**Teaching.** The loop is legible, every tool call prints, and the whole thing is
+testable with no API key.
+
+### What it's not for
+
+**Real work.** Use [Claude Code](https://claude.com/claude-code),
+[grok](https://x.ai/cli), or Codex. They're better at every task listed above,
+because ~1.3M of the lines this repo doesn't have are the ones that make an agent
+trustworthy on a bad day — when the context is full, when the model is
+confidently wrong, when the command is destructive, when the file moved.
+
+Specifically, don't use it when:
+
+- **The codebase is large.** No compaction. It hit 142,984 tokens against a
+  128,000 limit in six turns and crashed.
+- **You can't check the work yourself.** It will tell you it's done when it has
+  broken your tests. That's documented above, not hypothetical.
+- **The task needs more than ~20 turns.** `--max-turns` exists because there's
+  nothing smarter underneath it.
+
+**That gap is the whole point of the repo.** The 378 lines get you something that
+works on a good day. The other 1,299,622 get you something that works on a bad
+one — and every one of those failure modes was a paragraph in
+[REFERENCE.md](REFERENCE.md) before it was a thing that happened here.
+
+---
+
 ## Running it
 
 ```bash
