@@ -53,7 +53,7 @@ design. It's product.
 
 - [ ] **The loop** — *Task 7*
 - [x] [**Tools: read, list, grep**](#tools-read-list-grep)
-- [ ] **Tools: edit and write** — *Task 4*
+- [x] [**Tools: edit and write**](#tools-edit-and-write)
 - [ ] **Tools: bash and safety** — *Task 5*
 - [ ] **Sessions and the stateless model** — *Task 6*
 - [ ] **What we left out, and why** — *Task 9*
@@ -105,6 +105,79 @@ Three things, none of them the tool logic:
 interesting thing about `xai-grok-tools` isn't in the tools — it's that a
 frontier lab looked at the tool layer and decided it wasn't worth rebuilding.
 The differentiator was somewhere else.
+
+---
+
+## Tools: edit and write
+
+**Ours:** ~60 lines. `edit_file` does a naive unique-string replace; `write`
+creates or overwrites.
+**grok-build:** three separate edit toolsets, one of them with a dedicated
+887-line benchmark.
+
+### What grok-build does
+
+`search_replace` in the default toolset does what ours does. But xAI also built
+**hashline**, an anchored editor where every line carries a short content hash,
+so the model targets `a3f:  return a - b` instead of the bare text. A stale
+anchor is then *detected* rather than silently mismatched.
+
+There are **three candidate schemes**, and the docstrings say why:
+
+| Scheme | Anchor | Trade-off |
+|---|---|---|
+| **A** `ContentOnly` | line hash | Simplest. Weakest freshness — edits above a line don't invalidate it |
+| **B** `ChunkFingerprint` | line hash + fixed chunk fingerprint | Only anchors in the touched chunk invalidate. *"Recommended starting point"* |
+| **C** `CheckpointChain` | line hash + nearest-checkpoint fingerprint | Strongest detection, most churn after edits |
+
+`benchmark.rs` (887 lines) scores them in two phases — single-mutation
+microbenchmarks and deterministic edit-trace simulation — across hash lengths
+`[2,3]`, chunk sizes `[8,16,32]`, checkpoint intervals `[16,32,64]`.
+
+### The minimum
+
+`text.count(old_string)`: zero matches → error string; more than one → refuse as
+ambiguous; exactly one → replace. Thirty lines.
+
+**We use it on purpose.** It fails when the model targets content it
+misremembers from three turns ago. That failure is the point.
+
+### What the extra lines buy
+
+Detection of a specific, silent failure — and they measured it rather than
+assumed it.
+
+The metric design is the part worth stealing. They keep **`false_valid`** (anchor
+says fine, content changed → *your code gets corrupted*) separate from
+**`false_stale`** (anchor says stale, content didn't change → *a wasted re-read*).
+Both are "errors"; averaging them into one accuracy number would hide the only
+distinction that matters. Then they price the fix in **read-amplification**:
+Scheme A validates 1 line, B validates `chunk_size`, C validates back to the
+checkpoint. Stronger detection literally costs more context.
+
+And there is **no LLM anywhere in that benchmark.** They isolated the
+deterministic substrate — given a file and a mutation, does the anchor correctly
+report stale? — and measured that for free. (`tests/fakes.py` in this repo is the
+same move, arrived at independently.)
+
+### The finding
+
+**Hashline ships behind a server-side flag** — `resolve_file_toolset()` checks
+`/v1/settings` and can flip users to it remotely. Three schemes, a benchmark, and
+a remote rollout switch means **xAI has not settled this question.** They're
+running it on real traffic to find out.
+
+Which makes naive string matching a defensible v1 rather than a naive one: it's
+the baseline a frontier lab is still measuring against.
+
+### Why `write` isn't gated
+
+`write` overwrites files and `bash` is gated, so the asymmetry needs a reason.
+It's grok's own reversibility test from `<action_safety>`: writes land in a repo
+under version control and are recoverable; `bash` can do anything to anything.
+Gating writes would mean confirming every file the agent creates — which trains
+you to hit `y` reflexively and makes the `bash` gate worth less. **A gate that
+fires constantly is a gate nobody reads.**
 
 ---
 
