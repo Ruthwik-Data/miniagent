@@ -13,7 +13,7 @@ Measured, not estimated:
 | Code | **309** |
 | Annotation (the docstrings explaining grok) | 260 |
 | **Total** | **569** |
-| Tests | 37, all offline |
+| Tests | 39, all offline |
 
 Of those 309 code lines, roughly **110 are JSON tool schemas** — data describing
 the tools to the model, not logic. The six tool implementations are ~50 lines

@@ -117,11 +117,23 @@ def bash(command: str, cwd: str = ".") -> str:
     permissions engine and configurable approval rules. We ask a yes/no
     question. The 120s timeout is the whole resource story here; theirs
     has background tasks, monitors, and kill_task.
+
+    cwd is expanduser'd because models pass "~" and subprocess does not
+    expand it — found by actually running this against a live model, which
+    is also why grok-build has a normalization.rs. Path shapes the model
+    emits are not the shapes the OS accepts.
     """
     try:
         r = subprocess.run(
-            command, shell=True, capture_output=True, text=True, cwd=cwd, timeout=120
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=Path(cwd).expanduser(),
+            timeout=120,
         )
+    except (FileNotFoundError, NotADirectoryError) as e:
+        return f"error: bad cwd {cwd!r}: {e}"
     except subprocess.TimeoutExpired:
         return "error: command timed out after 120s"
     output = (r.stdout + r.stderr).strip()

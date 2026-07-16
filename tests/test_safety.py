@@ -37,3 +37,15 @@ def test_bash_returns_exit_code_and_output(tmp_path):
 def test_bash_returns_stderr_and_nonzero_exit_as_a_string(tmp_path):
     out = bash("exit 3", cwd=str(tmp_path))
     assert out.startswith("exit 3")
+
+
+def test_bash_expands_tilde_in_cwd():
+    # Models pass "~"; subprocess does not expand it. Found live.
+    out = bash("pwd", cwd="~")
+    assert out.startswith("exit 0")
+    assert "~" not in out
+
+
+def test_bash_reports_a_bad_cwd_as_a_string(tmp_path):
+    out = bash("pwd", cwd=str(tmp_path / "nope"))
+    assert "error" in out.lower()
